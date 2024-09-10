@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the Words in Sequence!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('your-image.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            margin-top: 200px; /* Adjust if needed to fully show top image */
+            padding: 0 20px;
+        }
+        #message-container {
+            width: 300px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.8); /* Transparent white */
+            border-radius: 5px;
+            position: fixed;
+            left: 20px;
+            top: 100px; /* Adjust to align higher up on the page */
+        }
+        #rules {
+            width: 250px;
+            padding: 10px;
+            background-color: lightgreen;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #clues {
+            width: 250px;
+            padding: 10px;
+            background-color: yellow;
+            border-radius: 5px;
+        }
+        #grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(25, 30px);
+            gap: 2px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .cell.selected {
+            background-color: yellow;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <img src="your-logo.jpg" alt="Game Logo" style="width: 100%; height: auto; display: block;">
+    <h1 style="text-align: center; margin-top: 10px;">Find the Words in Sequence!</h1>
+    <div class="container">
+        <div id="message-container">
+            <div id="message" style="display: none;"></div>
+        </div>
+        <div id="grid-container">
+            <div id="grid"></div>
+            <button id="submit-button">Submit</button>
+        </div>
+        <div>
+            <div id="rules">
+                <h3>Rules</h3>
+                <ul>
+                    <li>Click and drag to select letters forming the words.</li>
+                    <li>Click on selected letters to deselect them if needed.</li>
+                    <li>All words must be found in the sequence of clues.</li>
+                    <li style="color: red;">All the words must be found in the sequence of clues.</li>
+                </ul>
+            </div>
+            <div id="clues">
+                <h3>Clues</h3>
+                <ul>
+                    <li>GYANODAYA: The process of enlightening the mind.</li>
+                    <li>GROWTHMINDSET: Belief in the ability to grow.</li>
+                    <li>FITFORFUTURE: Being prepared for upcoming challenges.</li>
+                    <li>RISKMANAGEMENT: Process of managing risks.</li>
+                    <li>INFLUENCING: The ability to impact others.</li>
+                    <li>MACROECONOMICS: The study of the economy as a whole.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gridSize = 25;
+        const words = ['GYANODAYA', 'GROWTHMINDSET', 'FITFORFUTURE', 'RISKMANAGEMENT', 'INFLUENCING', 'MACROECONOMICS'];
+        let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+        let foundWords = {};
+        let startTime;
+        let endTime;
+
+        function createGrid() {
+            const gridContainer = document.getElementById('grid');
+            gridContainer.innerHTML = '';
+
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.textContent = grid[row][col];
+                    cell.addEventListener('mousedown', handleCellClick);
+                    cell.addEventListener('mouseover', handleCellHover);
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(event) {
+            if (event.buttons === 1) { // Only handle mouse button down
+                const cell = event.target;
+                cell.classList.toggle('selected');
+            }
+        }
+
+        function handleCellHover(event) {
+            if (event.buttons === 1) {
+                const cell = event.target;
+                cell.classList.toggle('selected');
+            }
+        }
+
+        function placeWord(word) {
+            let placed = false;
+            while (!placed) {
+                const direction = Math.random() < 0.5 ? 'H' : 'V'; // Horizontal or Vertical
+                const row = Math.floor(Math.random() * gridSize);
+                const col = Math.floor(Math.random() * gridSize);
+
+                if (canPlaceWord(word, row, col, direction)) {
+                    for (let i = 0; i < word.length; i++) {
+                        if (direction === 'H') {
+                            grid[row][col + i] = word[i];
+                        } else {
+                            grid[row + i][col] = word[i];
+                        }
+                    }
+                    placed = true;
+                    foundWords[word] = false; // Initialize word status
+                }
+            }
+        }
+
+        function canPlaceWord(word, row, col, direction) {
+            if (direction === 'H') {
+                if (col + word.length > gridSize) return false;
+                for (let i = 0; i < word.length; i++) {
+                    if (grid[row][col + i] !== '' && grid[row][col + i] !== word[i]) return false;
+                }
+            } else {
+                if (row + word.length > gridSize) return false;
+                for (let i = 0; i < word.length; i++) {
+                    if (grid[row + i][col] !== '' && grid[row + i][col] !== word[i]) return false;
+                }
+            }
+            return true;
+        }
+
+        function fillRandomLetters() {
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (grid[row][col] === '') {
+                        grid[row][col] = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random letter A-Z
+                    }
+                }
+            }
+        }
+
+        function checkIfWordsFound() {
+            words.forEach(word => {
+                if (!foundWords[word]) {
+                    if (isWordFound(word)) {
+                        foundWords[word] = true;
+                    }
+                }
+            });
+
+            if (Object.values(foundWords).every(found => found)) {
+                endTime = new Date();
+                const timeTaken = Math.round((endTime - startTime) / 1000);
+                const message = document.getElementById('message');
+                message.textContent = `Congratulations, you have found all the words in ${timeTaken} seconds!`;
+                message.style.display = 'block';
+                message.classList.add('blink');
+            }
+        }
+
+        function isWordFound(word) {
+            const cells = Array.from(document.querySelectorAll('.cell.selected'));
+            const selectedCells = cells.map(cell => ({
+                row: parseInt(cell.dataset.row, 10),
+                col: parseInt(cell.dataset.col, 10)
+            }));
+
+            function checkDirection(startRow, startCol, rowInc, colInc) {
+                for (let i = 0; i < word.length; i++) {
+                    const r = startRow + i * rowInc;
+                    const c = startCol + i * colInc;
+                    if (!selectedCells.some(cell => cell.row === r && cell.col === c)) return false;
+                }
+                return true;
+            }
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    if (checkDirection(r, c, 0, 1) || // Horizontal
+                        checkDirection(r, c, 1, 0) || // Vertical
+                        checkDirection(r, c, 1, 1) || // Diagonal down-right
+                        checkDirection(r, c, 1, -1)) { // Diagonal down-left
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function initGame() {
+            startTime = new Date();
+            words.forEach(placeWord);
+            fillRandomLetters();
+            createGrid();
+        }
+
+        document.getElementById('submit-button').addEventListener('click', function() {
+            checkIfWordsFound();
+        });
+
+        initGame();
+    </script>
+</body>
+</html>
